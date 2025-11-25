@@ -6,55 +6,60 @@ const cheerio = require('cheerio')
 
 const app = express()
 app.use(cors())
-const PORT = process.env.PORT || 3000
 
-const SCRAPERAPI_KEY = process.env.SCRAPERAPI_KEY // set en .env
+const PORT = process.env.PORT || 3000
+const SCRAPERAPI_KEY = process.env.SCRAPERAPI_KEY // agregas tu clave en .env
 
 app.get('/search', async (req, res) => {
-    const { keyword } = req.query
-    const targetUrl = `https://www.workana.com/jobs?language=es${
-        keyword ? '&query=' + encodeURIComponent(keyword) : ''
-    }`
+const { keyword } = req.query
 
-    try {
-        // ScraperAPI example: http://api.scraperapi.com/?api_key=KEY&url=ENCODED_URL&render=true
-        const apiUrl = 'http://api.scraperapi.com/'
-        const params = {
-            api_key: SCRAPERAPI_KEY,
-            url: targetUrl,
-            render: 'true', // renderizar JS si es necesario
-        }
+```
+const targetUrl = `https://www.workana.com/jobs?language=es${
+    keyword ? '&query=' + encodeURIComponent(keyword) : ''
+}`
 
-        const { data: html } = await axios.get(apiUrl, {
-            params,
-            timeout: 60000,
-        })
-        console.log("HTML recibido:", html)
-        const $ = cheerio.load(html)
-
-        const results = []
-        $('.project-item').each((i, el) => {
-            const title = $(el).find('.project-title span').text().trim()
-            const desc =
-                $(el).find('.expander').text().trim() || 'Sin descripción'
-            const href = $(el).find('a').attr('href') || ''
-            if (title) {
-                results.push({
-                    title,
-                    description: desc,
-                    url: href.startsWith('http')
-                        ? href
-                        : 'https://www.workana.com' + href,
-                })
-            }
-        })
-
-        res.json(results)
-    } catch (err) {
-        console.error(err.message || err)
-        res.status(500).json({ error: 'Scraping failed', details: err.message })
+try {
+    const apiUrl = 'http://api.scraperapi.com/'
+    const params = {
+        api_key: SCRAPERAPI_KEY,
+        url: targetUrl,
+        render: 'false'
     }
+
+    const { data: html } = await axios.get(apiUrl, { params })
+    const $ = cheerio.load(html)
+    const results = []
+
+    $('h2').each((i, el) => {
+        const title = $(el).text().trim()
+        if (!title) return
+
+        const container = $(el).parent()
+
+        const desc = container.find('div').eq(1).text().trim()
+
+        const link = container.find('a').last().attr('href')
+        const fullUrl = link
+            ? (link.startsWith('http') ? link : 'https://www.workana.com' + link)
+            : ''
+
+        results.push({
+            title,
+            description: desc || 'Sin descripción',
+            url: fullUrl
+        })
+    })
+
+    res.json(results)
+} catch (err) {
+    console.error(err)
+    res.status(500).json({
+        error: 'Scraping failed',
+        details: err.message
+    })
+}
+```
+
 })
 
 app.listen(PORT, () => console.log(`Server on ${PORT}`))
-
