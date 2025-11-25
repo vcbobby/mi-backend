@@ -13,7 +13,6 @@ const SCRAPERAPI_KEY = process.env.SCRAPERAPI_KEY // agregas tu clave en .env
 app.get('/search', async (req, res) => {
 const { keyword } = req.query
 
-```
 const targetUrl = `https://www.workana.com/jobs?language=es${
     keyword ? '&query=' + encodeURIComponent(keyword) : ''
 }`
@@ -63,3 +62,4 @@ try {
 })
 
 app.listen(PORT, () => console.log(`Server on ${PORT}`))
+
