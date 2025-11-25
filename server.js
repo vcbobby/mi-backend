@@ -29,6 +29,7 @@ app.get('/search', async (req, res) => {
             params,
             timeout: 60000,
         })
+        console.log("HTML recibido:", html)
         const $ = cheerio.load(html)
 
         const results = []
@@ -56,3 +57,4 @@ app.get('/search', async (req, res) => {
 })
 
 app.listen(PORT, () => console.log(`Server on ${PORT}`))
+
